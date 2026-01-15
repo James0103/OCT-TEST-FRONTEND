@@ -1,7 +1,7 @@
 <template>
   <div
     class="upload-zone"
-    :class="{ dragging: isDragging, 'has-file': store.imagePreview }"
+    :class="{ dragging: isDragging, 'has-file': store.imagePreview || store.batchFiles.length > 0 }"
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
     @drop.prevent="handleDrop"
@@ -12,10 +12,11 @@
       ref="fileInput"
       class="hidden-input"
       accept="image/*"
+      multiple
       @change="handleFileChange"
     />
 
-    <div v-if="!store.imagePreview" class="empty-state">
+    <div v-if="!store.imagePreview && store.batchFiles.length === 0" class="empty-state">
       <div class="upload-icon">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -33,8 +34,31 @@
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
       </div>
-      <p class="upload-text">Drag & drop your receipt here</p>
-      <span class="upload-hint">or click to browse files</span>
+      <p class="upload-text">Drag & drop receipts here</p>
+      <span class="upload-hint">or click to browse multiple files</span>
+    </div>
+
+    <div v-else-if="store.batchFiles.length > 1" class="batch-state">
+      <div class="batch-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+          <path d="M7 7h10" />
+          <path d="M7 12h10" />
+          <path d="M7 17h10" />
+        </svg>
+      </div>
+      <p class="upload-text">{{ store.batchFiles.length }} files selected</p>
+      <span class="upload-hint">Click to change selection</span>
     </div>
 
     <div v-else class="preview-state">
@@ -56,16 +80,20 @@ const fileInput = ref(null)
 
 const handleDrop = (e) => {
   isDragging.value = false
-  const file = e.dataTransfer.files[0]
-  if (file && file.type.startsWith('image/')) {
-    store.setImage(file)
+  const files = e.dataTransfer.files
+  if (files.length > 1) {
+    store.setBatchFiles(files)
+  } else if (files.length === 1 && files[0].type.startsWith('image/')) {
+    store.setImage(files[0])
   }
 }
 
 const handleFileChange = (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    store.setImage(file)
+  const files = e.target.files
+  if (files.length > 1) {
+    store.setBatchFiles(files)
+  } else if (files.length === 1) {
+    store.setImage(files[0])
   }
 }
 </script>
@@ -97,18 +125,21 @@ const handleFileChange = (e) => {
   display: none;
 }
 
-.empty-state {
+.empty-state,
+.batch-state {
   text-align: center;
   color: var(--text-secondary);
 }
 
-.upload-icon {
+.upload-icon,
+.batch-icon {
   margin-bottom: 1rem;
   color: var(--text-secondary);
   transition: var(--transition-normal);
 }
 
-.upload-zone:hover .upload-icon {
+.upload-zone:hover .upload-icon,
+.upload-zone:hover .batch-icon {
   color: var(--accent-primary);
   transform: translateY(-5px);
 }

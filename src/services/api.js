@@ -10,9 +10,11 @@ const api = axios.create({
 })
 
 export const ocrService = {
-  async compare(file) {
+  async compare(file, saveToSheet = true, sheetName = 'OCR Comparison') {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('save_to_sheet', saveToSheet)
+    formData.append('sheet_name', sheetName)
     return api.post('/compare', formData)
   },
 
